@@ -1,3 +1,76 @@
 body {
-  color: blue;
+  /* color: blue; */
+}
+
+/* Top container layout */
+.top-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: lightgray;
+  padding: 20px 40px;
+  gap: 0;
+}
+
+/* Logo (image) top left */
+.top-box:first-child {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+/* Make image smaller */
+.top-box img {
+  width: 80px;
+  height: auto;
+  display: block;
+}
+
+/* "Welcome" text centered */
+.top-box:nth-child(2) {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Third box stays right */
+.top-box:nth-child(3) {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+/* Rainbow text effect for boxes */
+.top-box {
+  background: linear-gradient(
+    90deg,
+    red,
+    orange,
+    yellow,
+    green,
+    blue,
+    indigo,
+    violet
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.mid-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 600px;
+  background-color: lightgray;
+  margin-top: 100px;
+}
+.footer-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 600px;
+  background-color: lightgray;
+  margin-top: 100px;
 }
