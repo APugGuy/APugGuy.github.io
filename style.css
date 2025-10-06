@@ -1,5 +1,6 @@
 body {
-  /* color: blue; */
+  margin: 0;
+  padding: 0;
 }
 
 /* Top container layout */
@@ -9,39 +10,25 @@ body {
   align-items: center;
   background-color: lightgray;
   padding: 20px 40px;
-  gap: 0;
 }
 
-/* Logo (image) top left */
-.top-box:first-child {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-}
-
-/* Make image smaller */
+/* Logo */
 .top-box img {
   width: 80px;
   height: auto;
   display: block;
 }
 
-/* "Welcome" text centered */
+/* Title centered */
 .top-box:nth-child(2) {
-  flex: 1 1 auto;
+  flex: 1;
   text-align: center;
   font-size: 2rem;
   font-weight: bold;
 }
 
-/* Third box stays right */
-.top-box:nth-child(3) {
-  flex: 0 0 auto;
-  text-align: right;
-}
-
-/* Rainbow text effect for boxes */
-.top-box {
+/* Rainbow text (except button) */
+.top-box:not(:nth-child(3)) {
   background: linear-gradient(
     90deg,
     red,
@@ -54,23 +41,22 @@ body {
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
 }
 
+/* Cards layout */
 .mid-container {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 600px;
-  background-color: lightgray;
-  margin-top: 100px;
+  gap: 30px;          /* mellomrom mellom kort */
+  margin: 50px 0;     /* avstand over/under */
+  flex-wrap: wrap;    /* gjør at de hopper ned hvis skjermen er liten */
 }
+
+/* Footer */
 .footer-container {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 600px;
+  gap: 100px;
   background-color: lightgray;
-  margin-top: 100px;
+  padding: 20px;
 }
