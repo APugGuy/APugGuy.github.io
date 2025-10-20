@@ -1,47 +1,53 @@
 body {
   margin: 0;
   padding: 0;
+  background-color: rgb(237, 237, 237);
 }
 
 /* Top container layout */
 .top-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  background-color: lightgray;
+  background-color: rgb(237, 237, 237);
   padding: 20px 40px;
+
+}
+.top-box {
+    margin-top: 30px;
+    flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* Logo */
-.top-box img {
-  width: 80px;
+.top-box img[alt="Logo"] {
+  width: 140px;
   height: auto;
   display: block;
+  margin-left: 110px;
 }
 
-/* Title centered */
-.top-box:nth-child(2) {
-  flex: 1;
-  text-align: center;
-  font-size: 2rem;
-  font-weight: bold;
+/* Profile icon in dropdown (person.png) */
+.dropdown .btn-custom img {
+  width: 25px;
+  height: 25px;
+  display: inline-block;
+  margin: 0;
+  object-fit: contain;
 }
 
-/* Rainbow text (except button) */
-.top-box:not(:nth-child(3)) {
-  background: linear-gradient(
-    90deg,
-    red,
-    orange,
-    yellow,
-    green,
-    blue,
-    indigo,
-    violet
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Cart icon (cart.png) */
+.top-box img[alt="cart"] {
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+  margin: 0;
+  object-fit: contain;
 }
+
+
 
 /* Cards layout */
 .mid-container {
@@ -50,6 +56,7 @@ body {
   gap: 30px;          /* mellomrom mellom kort */
   margin: 50px 0;     /* avstand over/under */
   flex-wrap: wrap;    /* gjør at de hopper ned hvis skjermen er liten */
+  
 }
 
 /* Footer */
@@ -60,3 +67,23 @@ body {
   background-color: lightgray;
   padding: 20px;
 }
+    .dropdown .btn-custom {
+      background-color: rgb(237, 237, 237); /* your color */
+      color: white;
+      border: none;
+    }
+
+    .dropdown .btn-custom:hover {
+      background-color: rgb(237, 237, 237); /* slightly darker on hover */
+    }
+
+    /* 2. Remove the Bootstrap arrow */
+    .dropdown-toggle::after {
+      display: none !important;
+    }
+
+    /* 3. Show menu on hover */
+    .dropdown:hover .dropdown-menu {
+      display: block;
+      margin-top: 0;
+    }
