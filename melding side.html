@@ -73,72 +73,103 @@
 
 <!-- Her starter vårt eget JavaScript -->
 <script>
-  // 🔑 Koble nettsiden til ditt Supabase-prosjekt, bytt ut det i rød tekst med dine verdier ⚠️
+  // 🔑 Koble nettsiden til ditt Supabase-prosjekt
   const SUPABASE_URL = "https://ivlertpelhlmrkelimik.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Henter elementene fra skjemaet og siden
-      const form = document.getElementById('form');
-      const nameInput = document.getElementById('name');
-      const contentInput = document.getElementById('content');
-      const msgsEl = document.getElementById('msgs');
-      const statusEl = document.getElementById('status');
-      const countEl = document.getElementById('count');
+  // Henter elementene fra skjemaet og siden
+  const form = document.getElementById('form');
+  const nameInput = document.getElementById('name');
+  const contentInput = document.getElementById('content');
+  const msgsEl = document.getElementById('msgs');
+  const statusEl = document.getElementById('status');
+  const countEl = document.getElementById('count');
 
-      // Gjør tekst trygg for visning (hindrer HTML-injeksjon)
-      function esc(s){
-      return (s || '').replace(/[<>&"']/g, c => ({ '<':'<', '>' :'>', '"' :'"', "'" :''' }[c])); } //
-          Deler opp meldingen i navn og tekst function parseRow(r){ const raw=r.content || '' ; const
-          i=raw.indexOf('::'); return i===-1 ? { name: 'Anonym' , message: raw, created_at: r.created_at } : { name:
-          raw.slice(0,i), message: raw.slice(i+2), created_at: r.created_at }; } // Leser meldinger fra databasen og
-          viser dem async function loadMessages(){ statusEl.textContent='Laster...' ; const { data, error }=await
-          supabase .from('messages') .select('*') .order('created_at', { ascending: false }) .limit(100); if (error) {
-          statusEl.textContent='Feil: ' + error.message; return; } countEl.textContent=(data || []).length;
-          msgsEl.innerHTML=(data || []).map(r=> {
-          const it = parseRow(r);
-          const when = new Date(it.created_at).toLocaleString();
-          return `
+  // Gjør tekst trygg for visning (hindrer HTML-injeksjon)
+  function esc(s) {
+    return (s || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;',
+      '>': '&gt;',
+      '&': '&amp;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
+  }
+
+  // Deler opp meldingen i navn og tekst
+  function parseRow(r) {
+    const raw = r.content || '';
+    const i = raw.indexOf('::');
+    return i === -1
+      ? { name: 'Anonym', message: raw, created_at: r.created_at }
+      : { name: raw.slice(0, i), message: raw.slice(i + 2), created_at: r.created_at };
+  }
+
+  // Leser meldinger fra databasen og viser dem
+  async function loadMessages() {
+    statusEl.textContent = 'Laster...';
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      statusEl.textContent = 'Feil: ' + error.message;
+      return;
+    }
+
+    countEl.textContent = (data || []).length;
+
+    msgsEl.innerHTML = (data || []).map(r => {
+      const it = parseRow(r);
+      const when = new Date(it.created_at).toLocaleString();
+      return `
 ${esc(it.name)}: ${esc(it.message)} ${when}
 `;
-          }).join('');
-          statusEl.textContent = 'Klar';
-          }
+    }).join('');
 
-          // Sender inn ny melding når eleven trykker "Lagre"
-          form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          form.classList.add('was-validated');
-          if (!form.checkValidity()) return;
+    statusEl.textContent = 'Klar';
+  }
 
-          const name = nameInput.value.trim();
-          const msg = contentInput.value.trim();
-          if (!name || !msg) return;
+  // Sender inn ny melding når eleven trykker "Lagre"
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    form.classList.add('was-validated');
+    if (!form.checkValidity()) return;
 
-          const submitBtn = form.querySelector('button[type="submit"]');
-          submitBtn.disabled = true;
-          statusEl.textContent = 'Lagrer...';
+    const name = nameInput.value.trim();
+    const msg = contentInput.value.trim();
+    if (!name || !msg) return;
 
-          // Sender data til Supabase-tabellen "messages"
-          const { error } = await supabase.from('messages').insert({ content: name + '::' + msg });
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Lagrer...';
 
-          submitBtn.disabled = false;
+    // Sender data til Supabase-tabellen "messages"
+    const { error } = await supabase
+      .from('messages')
+      .insert({ content: name + '::' + msg });
 
-          if (error) { statusEl.textContent = 'Feil ved lagring: ' + error.message; return; }
+    submitBtn.disabled = false;
 
-          // Nullstiller skjema og fjerner valideringsklassen
-          form.reset();
-          form.classList.remove('was-validated');
-          statusEl.textContent = 'Lagret!';
-          nameInput.focus();
+    if (error) {
+      statusEl.textContent = 'Feil ved lagring: ' + error.message;
+      return;
+    }
 
-          // Oppdaterer visningen
-          await loadMessages();
-          });
+    // Nullstiller skjema og fjerner valideringsklassen
+    form.reset();
+    form.classList.remove('was-validated');
+    statusEl.textContent = 'Lagret!';
+    nameInput.focus();
 
-          // Kjører første opplasting av meldinger når siden lastes
-          loadMessages();
-          </script>
-          </body>
-          </html>
-          
+    // Oppdaterer visningen
+    await loadMessages();
+  });
+
+  // Kjører første opplasting av meldinger når siden lastes
+  loadMessages();
+</script>
