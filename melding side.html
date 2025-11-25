@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Supabase demo — Meldinger</title>
 
+  <!-- Laster Bootstrap for enkel styling -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
@@ -15,6 +16,7 @@
 </head>
 <body>
 
+  <!-- Toppfelt med tittel -->
   <nav class="navbar navbar-expand-md bg-white border-bottom">
     <div class="container">
       <a class="navbar-brand fw-semibold" href="#">Supabase demo</a>
@@ -27,31 +29,23 @@
       <p class="text-muted mb-0">Skriver til databasen og viser under.</p>
     </header>
 
+    <!-- Skjema for innsending av navn og melding -->
     <section class="row g-4">
       <div class="col-12 col-lg-5">
         <div class="card card-elev shadow-sm">
           <div class="card-body">
             <h2 class="h6 mb-3">Send inn</h2>
             <form id="form" class="needs-validation" novalidate>
-
-              <div class="mb-3">
-                <label class="form-label" for="verify">Hva heter rektor?</label>
-                <input id="verify" class="form-control" required placeholder="Svar: Endre">
-                <div class="invalid-feedback">Du må svare riktig for å sende melding.</div>
-              </div>
-
               <div class="mb-3">
                 <label class="form-label" for="name">Navn</label>
-                <input id="name" class="form-control" minlength="2" maxlength="30" required>
+                <input id="name" class="form-control" minlength="2" maxlength="30" required placeholder="F.eks. Sara">
                 <div class="invalid-feedback">Skriv inn navnet ditt (2–30 tegn).</div>
               </div>
-
               <div class="mb-3">
                 <label class="form-label" for="content">Kort melding</label>
-                <input id="content" class="form-control" maxlength="140" required>
+                <input id="content" class="form-control" maxlength="140" required placeholder="Hei verden! (maks 140 tegn)">
                 <div class="invalid-feedback">Skriv en kort melding (maks 140 tegn).</div>
               </div>
-
               <button class="btn btn-primary w-100" type="submit">Lagre</button>
               <div id="status" class="form-text mt-2 muted">Klar</div>
             </form>
@@ -59,6 +53,7 @@
         </div>
       </div>
 
+      <!-- Område for å vise alle meldinger -->
       <div class="col-12 col-lg-7">
         <div class="card card-elev shadow-sm">
           <div class="card-body">
@@ -73,24 +68,42 @@
     </section>
   </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Laster Supabase-biblioteket som gjør det mulig å kommunisere med databasen -->
+  <!-- Bootstrap JS (required for the modal) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Her starter vårt eget JavaScript -->
 <script>
+  // 🔑 Koble nettsiden til ditt Supabase-prosjekt
   const SUPABASE_URL = "https://ivlertpelhlmrkelimik.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Henter elementene fra skjemaet og siden
   const form = document.getElementById('form');
-  const verifyInput = document.getElementById('verify');
   const nameInput = document.getElementById('name');
   const contentInput = document.getElementById('content');
   const msgsEl = document.getElementById('msgs');
   const statusEl = document.getElementById('status');
   const countEl = document.getElementById('count');
 
+  // Gjør tekst trygg for visning (hindrer HTML-injeksjon)
   function esc(s) {
-    return (s || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c]));
+    return (s || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;',
+      '>': '&gt;',
+      '&': '&amp;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
   }
 
+  // Deler opp meldingen i navn og tekst
   function parseRow(r) {
     const raw = r.content || '';
     const i = raw.indexOf('::');
@@ -99,60 +112,153 @@
       : { name: raw.slice(0, i), message: raw.slice(i + 2), created_at: r.created_at };
   }
 
+  // Leser meldinger fra databasen og viser dem
   async function loadMessages() {
+    statusEl.textContent = 'Laster...';
+
     const { data, error } = await supabase
       .from('messages')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (error) return;
+    if (error) {
+      statusEl.textContent = 'Feil: ' + error.message;
+      return;
+    }
 
     countEl.textContent = (data || []).length;
 
     msgsEl.innerHTML = (data || []).map(r => {
-      const it = parseRow(r);
-      const when = new Date(it.created_at).toLocaleString();
-      return `
-        <div class="border rounded p-2">
-          <div class="fw-semibold">${esc(it.name)}</div>
-          <div>${esc(it.message)}</div>
-          <div class="small text-muted">${when}</div>
-        </div>`;
-    }).join('');
+  const it = parseRow(r);
+  const when = new Date(it.created_at).toLocaleString();
+
+  return `
+    <div class="border rounded p-2">
+      <div class="fw-semibold">${esc(it.name)}</div>
+      <div>${esc(it.message)}</div>
+      <div class="small text-muted">${when}</div>
+    </div>
+ `;
+}).join('');
+
+    statusEl.textContent = 'Klar';
   }
 
+  // Sender inn ny melding når eleven trykker "Lagre"
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     form.classList.add('was-validated');
-
-    const ans = verifyInput.value.trim().toLowerCase();
-    if (!(ans === 'endre' || ans === 'endre helsemm' || ans === 'endre helsem')) {
-      statusEl.textContent = 'Feil svar på rektor-spørsmålet!';
-      return;
-    }
-
     if (!form.checkValidity()) return;
 
     const name = nameInput.value.trim();
     const msg = contentInput.value.trim();
+    if (!name || !msg) return;
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Lagrer...';
+    // Før vi sender: vis quiz-popup som krever riktig svar
+    const ok = await askQuizQuestion();
+    if (!ok) {
+      // Feil svar — avbryt innsending
+      submitBtn.disabled = false;
+      statusEl.textContent = 'Feil svar — meldingen ble ikke sendt.';
+      return;
+    }
+
+    // Sender data til Supabase-tabellen "messages"
     const { error } = await supabase
       .from('messages')
       .insert({ content: name + '::' + msg });
+
+    submitBtn.disabled = false;
 
     if (error) {
       statusEl.textContent = 'Feil ved lagring: ' + error.message;
       return;
     }
 
+    // Nullstiller skjema og fjerner valideringsklassen
     form.reset();
     form.classList.remove('was-validated');
     statusEl.textContent = 'Lagret!';
-    loadMessages();
+    nameInput.focus();
+
+    // Oppdaterer visningen
+    await loadMessages();
   });
 
+  // Viser en Bootstrap-modal med spørsmålet og returnerer true/false
+  function askQuizQuestion() {
+    return new Promise(resolve => {
+      // Opprett modal element hvis ikke allerede i DOM
+      let modalEl = document.getElementById('quizModal');
+      if (!modalEl) {
+        modalEl = document.createElement('div');
+        modalEl.innerHTML = `
+          <div class="modal fade" id="quizModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Sikkerhetsspørsmål</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Lukk"></button>
+                </div>
+                <div class="modal-body">
+                  <p>Hva heter rektor?</p>
+                  <input id="quizInput" class="form-control" placeholder="Skriv svaret her">
+                  <div id="quizFeedback" class="form-text text-danger mt-2" style="display:none">Feil svar.</div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                  <button type="button" id="quizConfirm" class="btn btn-primary">Bekreft</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(modalEl);
+      }
+
+      const modalNode = document.getElementById('quizModal');
+      const modal = new bootstrap.Modal(modalNode, { backdrop: 'static', keyboard: false });
+      const input = modalNode.querySelector('#quizInput');
+      const feedback = modalNode.querySelector('#quizFeedback');
+      const confirmBtn = modalNode.querySelector('#quizConfirm');
+
+      function cleanUp(result) {
+        confirmBtn.removeEventListener('click', onConfirm);
+        modal.hide();
+        resolve(result);
+      }
+
+      function onConfirm() {
+        const ans = (input.value || '').trim().toLowerCase();
+        if (ans === 'endre' || ans === 'endre helsem') {
+          feedback.style.display = 'none';
+          cleanUp(true);
+        } else {
+          feedback.style.display = 'block';
+          input.focus();
+        }
+      }
+
+      confirmBtn.addEventListener('click', onConfirm);
+      // When modal hidden via cancel/close, resolve false
+      modalNode.addEventListener('hidden.bs.modal', function onHidden() {
+        modalNode.removeEventListener('hidden.bs.modal', onHidden);
+        // If confirm wasn't used, resolve false
+        // Slight delay to avoid race with cleanUp
+        setTimeout(() => resolve(false), 10);
+      });
+
+      input.value = '';
+      feedback.style.display = 'none';
+      modal.show();
+      // focus input when modal is shown
+      modalNode.addEventListener('shown.bs.modal', () => input.focus(), { once: true });
+    });
+  }
+
+  // Kjører første opplasting av meldinger når siden lastes
   loadMessages();
 </script>
-</body>
-</html>
