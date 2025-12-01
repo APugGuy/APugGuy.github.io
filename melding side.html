@@ -76,6 +76,23 @@
     crossorigin="anonymous"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Auth guard: redirect to index.html if not logged in & verified
+    (async () => {
+      try {
+        const client = window.supabase.createClient("https://ivlertpelhlmrkelimik.supabase.co", "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq");
+        const { data } = await client.auth.getUser();
+        const user = data?.user ?? null;
+        const verified = !!(user && (user.email_confirmed_at || user.confirmed_at));
+        if (!verified) {
+          window.location.href = 'index.html';
+        }
+      } catch (e) {
+        console.warn('Auth guard error', e);
+        window.location.href = 'index.html';
+      }
+    })();
+  </script>
 
 <!-- Her starter vårt eget JavaScript -->
 <script>

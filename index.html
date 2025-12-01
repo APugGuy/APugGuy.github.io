@@ -145,6 +145,27 @@
       crossorigin="anonymous"></script>
 
     <script>
+  // ===== Global auth guard =====
+  // Prevent access to the page unless logged in and verified.
+  (async () => {
+    try {
+      const supa = window.supabase || null;
+      if (!supa) return; // supabase will be available below when client is created
+      const client = supa.createClient("https://ivlertpelhlmrkelimik.supabase.co", "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq");
+      const { data } = await client.auth.getUser();
+      const user = data?.user ?? null;
+      const verified = !!(user && (user.email_confirmed_at || user.confirmed_at));
+      if (!verified) {
+        // Redirect to index with login modal prompt (stays on same page since this is index)
+        // Show message after scripts load
+        window.__requireLogin = true;
+      }
+    } catch (e) {
+      console.warn('Auth guard error', e);
+      window.__requireLogin = true;
+    }
+  })();
+
   // --- CONFIG (already set by you) ---
   const SUPABASE_URL = "https://ivlertpelhlmrkelimik.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq";
@@ -185,6 +206,12 @@
   function domainAllowed(email) {
     if (!email || typeof email !== "string") return false;
     return email.toLowerCase().endsWith("@stud.akademiet.no");
+  }
+
+  function isEmailVerified(user){
+    if(!user) return false;
+    // Supabase user objects usually have email_confirmed_at when verified
+    return !!(user.email_confirmed_at || user.confirmed_at);
   }
 
   // --- Update UI based on user state ---
@@ -256,7 +283,24 @@
         updateUIFromUser(null);
         return;
       }
+      // Enforce verification: treat unverified as logged out.
+      if(!isEmailVerified(user)) {
+        try { await supabaseClient.auth.signOut(); } catch(e){/* ignore */}
+        updateUIFromUser(null);
+        showMessage('E-post må bekreftes før innlogging. Sjekk innboksen for verifiseringslenke.');
+        return;
+      }
       updateUIFromUser(user);
+
+      // If guard requested login, open login modal
+      if (window.__requireLogin) {
+        try {
+          const lm = bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal'));
+          lm.show();
+          showMessage('Logg inn for å fortsette.');
+        } catch(e) {}
+        window.__requireLogin = false;
+      }
     } catch (err) {
       console.error("initAuth error:", err);
       showMessage("Feil ved henting av bruker. Sjekk konsollen.");
@@ -302,10 +346,13 @@
         const v = (nickInput.value || '').trim();
         if (!validNickname(v)) { nickFeedback.style.display = 'block'; nickInput.focus(); return; }
         // update user metadata
-        const { data, error } = await supabaseClient.auth.updateUser({ data: { nickname: v } });
+        const { data, error } = await supabaseClient.auth.updateUser({ data: { nickname: v, name: v, full_name: v, display_name: v } });
         if (error) {
           console.error('Failed to save nickname', error);
-          nickFeedback.textContent = 'Kunne ikke lagre kallenavn.'; nickFeedback.style.display = 'block'; return;
+          // Show more helpful message from Supabase
+          nickFeedback.textContent = (error.message || 'Kunne ikke lagre kallenavn.') + ' Sørg for at du er innlogget og at e-post er verifisert.';
+          nickFeedback.style.display = 'block';
+          return;
         }
         // refresh UI with new user
         const { data: got } = await supabaseClient.auth.getUser();
@@ -350,6 +397,13 @@
         // No user — abort and clear any local session
         try { await supabaseClient.auth.signOut(); } catch (e) { /* ignore */ }
         showMessage('Bruker ikke funnet. Sjekk at kontoen finnes.');
+        return;
+      }
+
+      // Verify email before allowing full login
+      if(!isEmailVerified(user)) {
+        try { await supabaseClient.auth.signOut(); } catch(e){ /* ignore */ }
+        showMessage('E-post ikke bekreftet. Sjekk e-posten og klikk verifiseringslenken før du logger inn.');
         return;
       }
 
@@ -401,7 +455,7 @@
       }
 
       console.log("Sign up result:", data);
-      showMessage("Registrering vellykket — sjekk e-posten for bekreftelse.", "success");
+      showMessage("Registrering vellykket — sjekk e-posten og bekreft før innlogging.", "success");
       // modal will be closed on confirmed sign in; keep it open for verification message
     } catch (err) {
       console.error("Unexpected signup error:", err);
@@ -424,6 +478,24 @@
       showMessage("Uventet feil ved utlogging.");
     }
   };
+
+  // Provide a resend verification helper
+  async function resendVerification(email){
+    if(!email) { showMessage('Ingen e-post å sende til.'); return; }
+    try {
+      // Supabase currently does not expose a direct resend endpoint via JS; typical approach is to trigger signUp again which re-sends if unconfirmed.
+      const { error } = await supabaseClient.auth.signUp({ email, password: 'dummy-temporary-pass' });
+      if(error){
+        // Silent: this flow may not work depending on settings; instruct user instead.
+        showMessage('Hvis du ikke finner e-posten, prøv «send på nytt» i din e-postklient eller kontakt administrator.');
+      } else {
+        showMessage('Verifiseringsmail forsøkt sendt (sjekk spam).', 'success');
+      }
+    } catch(e){
+      console.error('resendVerification error', e);
+      showMessage('Kunne ikke sende verifiseringsmail.');
+    }
+  }
 
   // Initialize
   initAuth();
