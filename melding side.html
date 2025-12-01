@@ -145,6 +145,20 @@
     statusEl.textContent = 'Klar';
   }
 
+  // Prefill the name input with the signed-in user's nickname if available
+  async function prefillNameFromUser() {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user ?? null;
+      if (user) {
+        const nick = user.user_metadata?.nickname || user.email || '';
+        if (nick) nameInput.value = nick;
+      }
+    } catch (err) {
+      console.error('prefillNameFromUser error', err);
+    }
+  }
+
   // Sender inn ny melding når eleven trykker "Lagre"
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -260,5 +274,6 @@
   }
 
   // Kjører første opplasting av meldinger når siden lastes
-  loadMessages();
+  // Prefill name (if logged in) then load messages
+  prefillNameFromUser().then(loadMessages);
 </script>

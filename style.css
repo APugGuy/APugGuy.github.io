@@ -87,3 +87,12 @@ body {
       display: block;
       margin-top: 0;
     }
+
+/* Tweak position of the profile dropdown so it doesn't go off-screen on the right */
+#profileDropdown.dropdown-menu {
+  /* shift slightly to the left */
+  transform: translateX(-40px) !important;
+  /* ensure it anchors to the right side */
+  right: 0 !important;
+  left: auto !important;
+}

@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="style.css" />
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    >
+    />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
+
   <body>
     <div class="top-container">
       <div class="top-box">
@@ -24,20 +25,77 @@
       <div class="top-box">PC-er & Skjermer</div>
       <div class="top-box">Wearables</div>
       <div class="top-box">Tilbehør</div>
-      <div class="top-box"> <a href="https://shop.samsung.com/no/cart"><img src="cart.png" alt="cart"></a> </div>
+      <div class="top-box">
+        <a href="https://shop.samsung.com/no/cart">
+          <img src="cart.png" alt="cart">
+        </a>
+      </div>
+
+      <!-- Profile dropdown -->
       <div class="top-box">
         <div class="dropdown">
-  <button class="btn btn-custom dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <img src="person.png" alt="Profile">
-  </button>
-  <ul class="dropdown-menu dropdown-menu-dark">
-    <li><a class="dropdown-item active" href="#">Action</a></li>
-    <li><a class="dropdown-item" href="melding side.html">Another action</a></li>
-    <li><a class="dropdown-item" href="melding side.html">Something else here</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="melding side.html">Separated link</a></li>
-  </ul>
-</div>
+          <button id="profileToggle" class="btn btn-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="person.png" alt="Profile">
+          </button>
+          <div id="profileDropdown" class="dropdown-menu dropdown-menu-end p-2" style="min-width:200px">
+            <!-- Filled dynamically by JS depending on auth state -->
+            <div class="small text-muted px-2">Du er ikke logget inn</div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="openLoginFromDropdown" type="button" data-bs-toggle="modal" data-bs-target="#loginModal">Logg inn / Lag konto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-dark">
+          <div class="modal-header">
+            <h5 class="modal-title">Logg inn</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <div>
+              <label class="form-label">E-post</label>
+              <input id="email" type="email" class="form-control">
+
+              <label class="form-label mt-3">Passord</label>
+              <input id="password" type="password" class="form-control">
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">Husk meg på denne enheten</label>
+              </div>
+
+              <p id="loginMessage" class="mt-3 text-danger"></p>
+            </div>
+
+            <button id="loginBtn" class="btn btn-primary w-100 mt-3">Logg inn</button>
+            <button id="signupBtn" class="btn btn-secondary w-100 mt-2">Lag konto</button>
+            <button id="logoutBtn" class="btn btn-danger w-100 mt-2 d-none">Logg ut</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nickname modal (required after first sign-in) -->
+    <div class="modal fade" id="nickModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-dark">
+          <div class="modal-header">
+            <h5 class="modal-title">Velg kallenavn</h5>
+          </div>
+          <div class="modal-body">
+            <p>Før du kan fortsette må du velge et kallenavn som vises når du sender meldinger.</p>
+            <input id="nickInput" class="form-control" placeholder="Kallenavn (2–30 tegn)">
+            <div id="nickFeedback" class="form-text text-danger mt-2" style="display:none">Skriv et gyldig kallenavn (2–30 tegn).</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" id="nickSave" class="btn btn-primary">Lagre</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -78,10 +136,303 @@
       <div class="footer-box">Box 3</div>
     </div>
 
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Bootstrap JS (required for modal and UI) -->
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-      crossorigin="anonymous"
-    ></script>
+      crossorigin="anonymous"></script>
+
+    <script>
+  // --- CONFIG (already set by you) ---
+  const SUPABASE_URL = "https://ivlertpelhlmrkelimik.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_dzv1-BSpefObyTjVEWEjgw_Ua8Q8jNq";
+
+  // --- create client correctly from the CDN global ---
+  // create client from global
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // --- DOM refs ---
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const rememberMe = document.getElementById("rememberMe");
+  const loginMessage = document.getElementById("loginMessage");
+
+  const loginBtn = document.getElementById("loginBtn");
+  const signupBtn = document.getElementById("signupBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // Bootstrap modal instance (so we can hide it programmatically)
+  const loginModalEl = document.getElementById("loginModal");
+  let bootstrapModal; 
+  if (loginModalEl) {
+    bootstrapModal = bootstrap.Modal.getOrCreateInstance(loginModalEl);
+  }
+
+  // --- Helpers ---
+  function showMessage(msg, type = "danger") {
+    loginMessage.textContent = msg;
+    loginMessage.classList.remove("text-danger", "text-success");
+    loginMessage.classList.add(type === "success" ? "text-success" : "text-danger");
+  }
+
+  function clearMessage() {
+    loginMessage.textContent = "";
+    loginMessage.classList.remove("text-danger", "text-success");
+  }
+
+  function domainAllowed(email) {
+    if (!email || typeof email !== "string") return false;
+    return email.toLowerCase().endsWith("@stud.akademiet.no");
+  }
+
+  // --- Update UI based on user state ---
+  async function updateUIFromUser(user) {
+    if (user) {
+      loginBtn.classList.add("d-none");
+      signupBtn.classList.add("d-none");
+      logoutBtn.classList.remove("d-none");
+      showMessage("Innlogget som: " + user.email, "success");
+    } else {
+      loginBtn.classList.remove("d-none");
+      signupBtn.classList.remove("d-none");
+      logoutBtn.classList.add("d-none");
+      clearMessage();
+    }
+
+    // Update profile dropdown contents
+    const profileDropdown = document.getElementById('profileDropdown');
+    if (profileDropdown) {
+      if (user) {
+        // show a small table-like layout with actions
+        profileDropdown.innerHTML = `
+          <div class="px-2">
+            <div class="fw-semibold">${user.email}</div>
+            <div class="small text-muted">Logget inn</div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="px-2">
+            <table class="table table-borderless table-sm mb-2">
+              <tbody>
+                <tr><td>Profil</td><td class="text-end"><button id="sendMeldingBtn" class="btn btn-sm btn-primary">Send melding</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item text-danger" id="dropdownLogout">Logg ut</button>
+        `;
+        // Wire actions
+        const sendBtn = document.getElementById('sendMeldingBtn');
+        if (sendBtn) sendBtn.onclick = () => { window.location.href = 'melding side.html'; };
+        const dLogout = document.getElementById('dropdownLogout');
+        if (dLogout) dLogout.onclick = async () => { await supabaseClient.auth.signOut(); };
+      } else {
+        profileDropdown.innerHTML = `
+          <div class="small text-muted px-2">Du er ikke logget inn</div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" id="openLoginFromDropdown" type="button" data-bs-toggle="modal" data-bs-target="#loginModal">Logg inn / Lag konto</button>
+        `;
+      }
+    }
+  }
+
+  // Try to fetch current session/user and update UI
+  async function initAuth() {
+    try {
+      // Clear any stale local session unless user opted for remember me previously
+      const REMEMBER_KEY = 'rememberMe';
+      const remember = localStorage.getItem(REMEMBER_KEY) === 'true';
+      if (!remember) {
+        try { await supabaseClient.auth.signOut(); } catch (e) { /* ignore */ }
+      }
+
+      const { data } = await supabaseClient.auth.getUser();
+      // getUser returns { data: { user } } when signed in, else data.user is null
+      const user = data?.user ?? null;
+      // If there's no user on the server, ensure we're signed out locally
+      if (!user) {
+        try { await supabaseClient.auth.signOut(); } catch (e) { /* ignore */ }
+        updateUIFromUser(null);
+        return;
+      }
+      updateUIFromUser(user);
+    } catch (err) {
+      console.error("initAuth error:", err);
+      showMessage("Feil ved henting av bruker. Sjekk konsollen.");
+    }
+  }
+
+  // Listen for auth state changes (login/logout) and update UI
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log("Auth event:", event, session);
+    const user = session?.user ?? null;
+    updateUIFromUser(user);
+
+    // Close modal on successful sign in
+    if (["SIGNED_IN", "USER_UPDATED"].includes(event) && bootstrapModal) {
+      try { bootstrapModal.hide(); } catch(e){ /* ignore */ }
+    }
+    // Prompt for nickname when the user signs in or when a user without nickname is detected
+    if (user && (event === 'SIGNED_IN' || !(user.user_metadata && user.user_metadata.nickname))) {
+      ensureNickname(user);
+    }
+  });
+
+  // If user logs in and has no nickname, prompt them to create one
+  async function ensureNickname(user) {
+    try {
+      if (!user) return;
+      const nick = user.user_metadata?.nickname;
+      if (nick && nick.toString().trim().length > 0) return; // already has nickname
+
+      const nickModalEl = document.getElementById('nickModal');
+      const nickModal = bootstrap.Modal.getOrCreateInstance(nickModalEl, {backdrop: 'static', keyboard: false});
+      const nickInput = nickModalEl.querySelector('#nickInput');
+      const nickFeedback = nickModalEl.querySelector('#nickFeedback');
+      const nickSave = nickModalEl.querySelector('#nickSave');
+
+      function validNickname(v) { return typeof v === 'string' && v.trim().length >=2 && v.trim().length <= 30; }
+
+      nickInput.value = '';
+      nickFeedback.style.display = 'none';
+      nickModal.show();
+
+      async function onSave() {
+        const v = (nickInput.value || '').trim();
+        if (!validNickname(v)) { nickFeedback.style.display = 'block'; nickInput.focus(); return; }
+        // update user metadata
+        const { data, error } = await supabaseClient.auth.updateUser({ data: { nickname: v } });
+        if (error) {
+          console.error('Failed to save nickname', error);
+          nickFeedback.textContent = 'Kunne ikke lagre kallenavn.'; nickFeedback.style.display = 'block'; return;
+        }
+        // refresh UI with new user
+        const { data: got } = await supabaseClient.auth.getUser();
+        const newUser = got?.user ?? null;
+        updateUIFromUser(newUser);
+        nickModal.hide();
+      }
+
+      nickSave.addEventListener('click', onSave, { once: true });
+    } catch (err) {
+      console.error('ensureNickname error', err);
+    }
+  }
+
+  // --- Button handlers ---
+  loginBtn.onclick = async () => {
+    clearMessage();
+    const email = emailInput.value?.trim();
+    const password = passwordInput.value ?? "";
+
+    if (!email || !password) {
+      showMessage("Fyll inn både e-post og passord.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.warn("signInWithPassword error:", error);
+        showMessage(error.message || "Innlogging feilet.");
+        return;
+      }
+
+      // Make sure server actually returned a user (in some edge cases the call may succeed without a valid user)
+      const got = await supabaseClient.auth.getUser();
+      const user = got?.data?.user ?? null;
+      if (!user) {
+        // No user — abort and clear any local session
+        try { await supabaseClient.auth.signOut(); } catch (e) { /* ignore */ }
+        showMessage('Bruker ikke funnet. Sjekk at kontoen finnes.');
+        return;
+      }
+
+      // Successful sign in: update UI and prompt for nickname if needed
+      console.log("Signed in:", data);
+      showMessage("Innlogging vellykket.", "success");
+      // Store remember-me preference
+      const REMEMBER_KEY = 'rememberMe';
+      try { localStorage.setItem(REMEMBER_KEY, rememberMe?.checked ? 'true' : 'false'); } catch(e) { /* ignore */ }
+      // prompt for nickname if missing
+      ensureNickname(user);
+      // modal will be closed by onAuthStateChange
+    } catch (err) {
+      console.error("Unexpected login error:", err);
+      showMessage("Uventet feil. Sjekk konsollen.");
+    }
+  };
+
+  signupBtn.onclick = async () => {
+    clearMessage();
+    const email = emailInput.value?.trim();
+    const password = passwordInput.value ?? "";
+
+    if (!email || !password) {
+      showMessage("Fyll inn både e-post og passord for å lage konto.");
+      return;
+    }
+
+    if (!domainAllowed(email)) {
+      showMessage("Kun @stud.akademiet.no kan lage konto!");
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage("Passord må være minst 6 tegn.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.warn("signUp error:", error);
+        showMessage(error.message || "Registrering feilet.");
+        return;
+      }
+
+      console.log("Sign up result:", data);
+      showMessage("Registrering vellykket — sjekk e-posten for bekreftelse.", "success");
+      // modal will be closed on confirmed sign in; keep it open for verification message
+    } catch (err) {
+      console.error("Unexpected signup error:", err);
+      showMessage("Uventet feil ved registrering.");
+    }
+  };
+
+  logoutBtn.onclick = async () => {
+    try {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        console.warn("signOut error:", error);
+        showMessage("Feil ved utlogging.");
+        return;
+      }
+      updateUIFromUser(null);
+      showMessage("Du er logget ut.", "success");
+    } catch (err) {
+      console.error("logout error:", err);
+      showMessage("Uventet feil ved utlogging.");
+    }
+  };
+
+  // Initialize
+  initAuth();
+
+  // Helpful debugging tips for you
+  console.log("Supabase client initialized. If something fails, open DevTools -> Console to see errors.");
+</script>
+
+
+    <!-- bootstrap script removed (loaded earlier) -->
   </body>
 </html>
