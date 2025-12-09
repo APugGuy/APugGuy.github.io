@@ -404,8 +404,8 @@
     }
 
     (function () {
-      const hostedHref = '/Oliver-2IM-vurdering/Index.html';
-      const localHref = '../Oliver-2IM-vurdering/Index.html';
+      const hostedHref = '/fake%20vurdering/Index.html';
+      const localHref = 'fake vurdering/Index.html';
       const useHref = window.location.protocol === 'file:' ? localHref : hostedHref;
 
       const frame = document.getElementById('oliverFrame');
